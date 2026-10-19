@@ -12,6 +12,10 @@ curriculum_url = (
 )
 
 years = range(2020, 2027)
+SEMESTER_CODES = {
+    "FIRST": ("STCU000600001", "STCU000600003"),
+    "SECOND": ("STCU000600002",),
+}
 
 request_payload = {
     "isApi": "Y",
@@ -105,6 +109,30 @@ def post_single_curriculum(data):
     return response.status_code in [201, 409]
 
 
+def get_curriculum_grades(major_code, records, year, semester_codes):
+    if str(major_code).startswith("2"):
+        return {1}
+
+    grades = set()
+    for record in records:
+        if (
+            str(record.get("dprtnCd")) != str(major_code)
+            or int(record.get("trgtYrsf")) != year
+            or record.get("estblSmstrCd") not in semester_codes
+        ):
+            continue
+
+        try:
+            grade = int(record.get("estblGrade"))
+        except TypeError, ValueError:
+            continue
+
+        if grade in range(1, 5):
+            grades.add(grade)
+
+    return grades
+
+
 def post_excel_curriculums(majors, semesters):
     records = fetch_excel_curriculums()
     posted = set()
@@ -149,12 +177,9 @@ def post_curriculums():
             if semester["year"] not in years:
                 continue
 
-            semester_code = {
-                "FIRST": ["STCU000600001", "STCU000600003"],
-                "SECOND": ["STCU000600002"],
-            }.get(semester["semester_"])
+            semester_codes = SEMESTER_CODES.get(semester["semester_"])
 
-            if semester_code is None:
+            if semester_codes is None:
                 continue
 
             request_payload["search"]["dprtnCd"] = major["major_code"]
@@ -168,14 +193,12 @@ def post_curriculums():
             response.raise_for_status()
             records = response.json()["data"]
 
-            grades = {
-                int(record["estblGrade"])
-                for record in records
-                if record["dprtnCd"] == major["major_code"]
-                and int(record["trgtYrsf"]) == semester["year"]
-                and record["estblSmstrCd"] in semester_code
-                and int(record["estblGrade"]) in range(1, 5)
-            }
+            grades = get_curriculum_grades(
+                major["major_code"],
+                records,
+                semester["year"],
+                semester_codes,
+            )
 
             for grade in sorted(grades):
                 post_single_curriculum(

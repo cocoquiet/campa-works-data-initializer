@@ -109,6 +109,10 @@ def post_single_master_course(data):
         print(f"Successfully posted data for {data.get('course_code')}.")
 
 
+def get_course_type(major_code):
+    return "GRADUATE" if str(major_code).startswith("2") else "UNDERGRADUATE"
+
+
 def post_excel_master_courses(excel_file_path):
     records = fetch_excel_curriculums(excel_file_path)
 
@@ -129,7 +133,7 @@ def post_excel_master_courses(excel_file_path):
             "credit": record["credit"],
             "lecture": record["lecture"],
             "practice": record["practice"],
-            "course_type": "UNDERGRADUATE",
+            "course_type": get_course_type(record["major_code"]),
             "course_status": "ACTIVE",
         }
 
@@ -177,7 +181,7 @@ def post_master_courses():
                                 "credit": int(record["crdit"]),
                                 "lecture": int(record["thryTime"]),
                                 "practice": int(record["prctsTime"]),
-                                "course_type": "UNDERGRADUATE",
+                                "course_type": get_course_type(major["major_code"]),
                                 "course_status": "ACTIVE",
                             },
                             headers={"Content-Type": "application/json"},

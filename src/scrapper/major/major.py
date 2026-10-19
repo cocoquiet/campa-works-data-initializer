@@ -83,6 +83,7 @@ def post_majors():
             "major_status": "ACTIVE",
         },
         {"major_name": "AI자율학부", "major_code": "A703", "major_status": "ACTIVE"},
+        {"major_name": "ICT융합학과", "major_code": "1O15", "major_status": "ACTIVE"},
         {"major_name": "컴퓨터학부", "major_code": "21153", "major_status": "ACTIVE"},
         {
             "major_name": "ICT소프트웨어전공",
@@ -102,6 +103,26 @@ def post_majors():
         {
             "major_name": "첨단AI컴퓨팅전공",
             "major_code": "2115304",
+            "major_status": "ACTIVE",
+        },
+        {
+            "major_name": "데이터융합컴퓨팅학과",
+            "major_code": "21180",
+            "major_status": "ACTIVE",
+        },
+        {
+            "major_name": "정보과학과",
+            "major_code": "21168",
+            "major_status": "ACTIVE",
+        },
+        {
+            "major_name": "ABB융합전공",
+            "major_code": "211A2",
+            "major_status": "ACTIVE",
+        },
+        {
+            "major_name": "정보보호학과",
+            "major_code": "2111U",
             "major_status": "ACTIVE",
         },
     ]

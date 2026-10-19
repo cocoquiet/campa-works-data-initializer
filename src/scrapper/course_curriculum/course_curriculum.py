@@ -11,6 +11,12 @@ curriculum_url = (
 )
 
 years = range(2020, 2027)
+SEMESTER_TYPES = {
+    "STCU000600001": "FIRST",
+    "STCU000600003": "FIRST",
+    "STCU000600002": "SECOND",
+}
+GRADUATE_SEMESTERS = ("FIRST", "SECOND")
 
 request_payload = {
     "isApi": "Y",
@@ -58,6 +64,26 @@ def post_single_course_curriculum(data: dict) -> bool:
         print(f"Successfully posted data for {data}.")
 
     return response.status_code in [201, 409]
+
+
+def get_course_curriculum_targets(major_code, record):
+    if str(major_code).startswith("2"):
+        return [(semester, 1) for semester in GRADUATE_SEMESTERS]
+
+    semester_type = SEMESTER_TYPES.get(record.get("estblSmstrCd"))
+    grade_value = record.get("estblGrade")
+    if semester_type is None or grade_value is None:
+        return []
+
+    try:
+        grade = int(grade_value)
+    except TypeError, ValueError:
+        return []
+
+    if grade not in range(1, 5):
+        return []
+
+    return [(semester_type, grade)]
 
 
 def post_excel_course_curriculums():
@@ -164,53 +190,53 @@ def post_course_curriculums():
 
                 for record in records:
                     if (
-                        record["dprtnCd"] != major["major_code"]
-                        or int(record["trgtYrsf"]) != year
+                        str(record.get("dprtnCd")) != str(major["major_code"])
+                        or int(record.get("trgtYrsf")) != year
                     ):
                         continue
 
-                    semester_type = {
-                        "STCU000600001": "FIRST",
-                        "STCU000600003": "FIRST",
-                        "STCU000600002": "SECOND",
-                    }.get(record["estblSmstrCd"])
-
-                    if semester_type is None or record["estblGrade"] is None:
-                        continue
-
-                    grade = int(record["estblGrade"])
-
-                    if semester_type is None or grade not in range(1, 5):
-                        continue
-
-                    course_ids = master_course_ids.get(record["sbjetCd"], [])
-                    matching_curriculum_ids = curriculum_ids.get(
-                        (major["id"], year, semester_type, grade),
-                        [],
+                    curriculum_targets = get_course_curriculum_targets(
+                        major["major_code"], record
                     )
+                    if not curriculum_targets:
+                        continue
 
-                    if len(course_ids) != 1 or len(matching_curriculum_ids) != 1:
+                    course_code = record.get("sbjetCd")
+                    course_ids = master_course_ids.get(course_code, [])
+                    if len(course_ids) != 1:
                         print(
-                            f"Failed to post course curriculum data for "
-                            f"{record['sbjetCd']}."
+                            f"Failed to post course curriculum data for {course_code}."
                         )
                         continue
 
-                    data = {
-                        "master_course_id": course_ids[0],
-                        "curriculum_id": matching_curriculum_ids[0],
-                    }
+                    for semester_type, grade in curriculum_targets:
+                        matching_curriculum_ids = curriculum_ids.get(
+                            (major["id"], year, semester_type, grade),
+                            [],
+                        )
 
-                    connection = (
-                        data["master_course_id"],
-                        data["curriculum_id"],
-                    )
+                        if len(matching_curriculum_ids) != 1:
+                            print(
+                                f"Failed to post course curriculum data for "
+                                f"{course_code}."
+                            )
+                            continue
 
-                    if connection in posted:
-                        continue
+                        data = {
+                            "master_course_id": course_ids[0],
+                            "curriculum_id": matching_curriculum_ids[0],
+                        }
 
-                    if post_single_course_curriculum(data):
-                        posted.add(connection)
+                        connection = (
+                            data["master_course_id"],
+                            data["curriculum_id"],
+                        )
+
+                        if connection in posted:
+                            continue
+
+                        if post_single_course_curriculum(data):
+                            posted.add(connection)
 
             except Exception as e:
                 print(f"An error occurred for year {year}: {e}")
