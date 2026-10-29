@@ -134,6 +134,7 @@ def post_excel_master_courses(excel_file_path):
             "lecture": record["lecture"],
             "practice": record["practice"],
             "course_type": get_course_type(record["major_code"]),
+            "is_core": False,
             "course_status": "ACTIVE",
         }
 
