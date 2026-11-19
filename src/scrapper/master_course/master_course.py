@@ -64,6 +64,7 @@ def fetch_excel_curriculums(excel_file_path):
                             "credit": credit,
                             "lecture": lecture,
                             "practice": practice,
+                            "category": str(category or "").strip(),
                         }
                     )
     finally:

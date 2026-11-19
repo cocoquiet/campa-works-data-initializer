@@ -167,6 +167,33 @@ def post_excel_curriculums(majors, semesters):
                     posted.add(key)
 
 
+def post_graduate_curriculums_from_2026(majors, semesters):
+    source_semesters = {
+        semester["semester_"]
+        for semester in semesters
+        if semester["year"] == 2026 and semester["semester_"] in SEMESTER_CODES
+    }
+
+    for major in majors:
+        if not str(major["major_code"]).startswith("2"):
+            continue
+
+        for semester in semesters:
+            if (
+                semester["year"] != 2027
+                or semester["semester_"] not in source_semesters
+            ):
+                continue
+
+            post_single_curriculum(
+                {
+                    "major_id": major["id"],
+                    "semester_id": semester["id"],
+                    "grade": 1,
+                }
+            )
+
+
 def post_curriculums():
 
     majors = httpx.get("http://localhost:8080/api/majors").json()
@@ -208,6 +235,7 @@ def post_curriculums():
                         "grade": grade,
                     }
                 )
+    post_graduate_curriculums_from_2026(majors, semesters)
     post_excel_curriculums(majors, semesters)
 
 
